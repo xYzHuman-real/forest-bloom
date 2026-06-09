@@ -14,7 +14,156 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      achievements: {
+        Row: {
+          key: string
+          unlocked_on: string
+          user_id: string
+        }
+        Insert: {
+          key: string
+          unlocked_on?: string
+          user_id: string
+        }
+        Update: {
+          key?: string
+          unlocked_on?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_seed: string
+          coins: number
+          created_at: string
+          current_streak: number
+          display_name: string | null
+          id: string
+          longest_streak: number
+          onboarded: boolean
+          updated_at: string
+        }
+        Insert: {
+          avatar_seed?: string
+          coins?: number
+          created_at?: string
+          current_streak?: number
+          display_name?: string | null
+          id: string
+          longest_streak?: number
+          onboarded?: boolean
+          updated_at?: string
+        }
+        Update: {
+          avatar_seed?: string
+          coins?: number
+          created_at?: string
+          current_streak?: number
+          display_name?: string | null
+          id?: string
+          longest_streak?: number
+          onboarded?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tracked_apps: {
+        Row: {
+          app_key: string
+          daily_limit_min: number
+          enabled: boolean
+          user_id: string
+        }
+        Insert: {
+          app_key: string
+          daily_limit_min?: number
+          enabled?: boolean
+          user_id: string
+        }
+        Update: {
+          app_key?: string
+          daily_limit_min?: number
+          enabled?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trees: {
+        Row: {
+          created_at: string
+          growth_pct: number
+          id: string
+          planted_on: string
+          position_x: number
+          position_z: number
+          species: string
+          state: Database["public"]["Enums"]["tree_state"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          growth_pct?: number
+          id?: string
+          planted_on?: string
+          position_x?: number
+          position_z?: number
+          species?: string
+          state?: Database["public"]["Enums"]["tree_state"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          growth_pct?: number
+          id?: string
+          planted_on?: string
+          position_x?: number
+          position_z?: number
+          species?: string
+          state?: Database["public"]["Enums"]["tree_state"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      unlocked_species: {
+        Row: {
+          species: string
+          unlocked_on: string
+          user_id: string
+        }
+        Insert: {
+          species: string
+          unlocked_on?: string
+          user_id: string
+        }
+        Update: {
+          species?: string
+          unlocked_on?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      usage_logs: {
+        Row: {
+          app_key: string
+          day: string
+          minutes_used: number
+          user_id: string
+        }
+        Insert: {
+          app_key: string
+          day: string
+          minutes_used?: number
+          user_id: string
+        }
+        Update: {
+          app_key?: string
+          day?: string
+          minutes_used?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +172,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      tree_state: "healthy" | "weak" | "dying" | "dead" | "reviving"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +299,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      tree_state: ["healthy", "weak", "dying", "dead", "reviving"],
+    },
   },
 } as const
