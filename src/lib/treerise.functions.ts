@@ -66,7 +66,7 @@ async function ensureTodayTree(supabase: any, userId: string) {
     let longest = prof?.longest_streak ?? 0;
     if (state === "healthy") {
       coins += 50;
-      const allLight = usageEntries.every((u) => u.daily_limit_min === 0 || u.minutes_used / u.daily_limit_min <= 0.5);
+      const allLight = usageEntries.every((u: { daily_limit_min: number; minutes_used: number }) => u.daily_limit_min === 0 || u.minutes_used / u.daily_limit_min <= 0.5);
       if (allLight) coins += 50; // perfect
       streak += 1;
       if (streak > longest) longest = streak;
