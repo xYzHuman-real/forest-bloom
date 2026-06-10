@@ -51,7 +51,7 @@ function Onboarding() {
     try {
       await complete({ data: { display_name: name || undefined } });
       toast.success("Your forest is ready 🌱");
-      navigate({ to: "/home" });
+      navigate({ to: "/permissions" });
     } catch (e: any) {
       toast.error(e.message ?? "Could not finish setup");
     } finally { setSaving(false); }
