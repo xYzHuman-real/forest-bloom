@@ -14,6 +14,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedPermissionsRouteImport } from './routes/_authenticated/permissions'
+import { Route as AuthenticatedLimitedRouteImport } from './routes/_authenticated/limited'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedForestRouteImport } from './routes/_authenticated/forest'
@@ -41,6 +43,17 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPermissionsRoute =
+  AuthenticatedPermissionsRouteImport.update({
+    id: '/permissions',
+    path: '/permissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLimitedRoute = AuthenticatedLimitedRouteImport.update({
+  id: '/limited',
+  path: '/limited',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
@@ -71,6 +84,8 @@ export interface FileRoutesByFullPath {
   '/forest': typeof AuthenticatedForestRouteWithChildren
   '/goals': typeof AuthenticatedGoalsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/limited': typeof AuthenticatedLimitedRoute
+  '/permissions': typeof AuthenticatedPermissionsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/forest/shop': typeof AuthenticatedForestShopRoute
 }
@@ -81,6 +96,8 @@ export interface FileRoutesByTo {
   '/forest': typeof AuthenticatedForestRouteWithChildren
   '/goals': typeof AuthenticatedGoalsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/limited': typeof AuthenticatedLimitedRoute
+  '/permissions': typeof AuthenticatedPermissionsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/forest/shop': typeof AuthenticatedForestShopRoute
 }
@@ -93,6 +110,8 @@ export interface FileRoutesById {
   '/_authenticated/forest': typeof AuthenticatedForestRouteWithChildren
   '/_authenticated/goals': typeof AuthenticatedGoalsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/limited': typeof AuthenticatedLimitedRoute
+  '/_authenticated/permissions': typeof AuthenticatedPermissionsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/forest/shop': typeof AuthenticatedForestShopRoute
 }
@@ -105,6 +124,8 @@ export interface FileRouteTypes {
     | '/forest'
     | '/goals'
     | '/home'
+    | '/limited'
+    | '/permissions'
     | '/profile'
     | '/forest/shop'
   fileRoutesByTo: FileRoutesByTo
@@ -115,6 +136,8 @@ export interface FileRouteTypes {
     | '/forest'
     | '/goals'
     | '/home'
+    | '/limited'
+    | '/permissions'
     | '/profile'
     | '/forest/shop'
   id:
@@ -126,6 +149,8 @@ export interface FileRouteTypes {
     | '/_authenticated/forest'
     | '/_authenticated/goals'
     | '/_authenticated/home'
+    | '/_authenticated/limited'
+    | '/_authenticated/permissions'
     | '/_authenticated/profile'
     | '/_authenticated/forest/shop'
   fileRoutesById: FileRoutesById
@@ -174,6 +199,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/permissions': {
+      id: '/_authenticated/permissions'
+      path: '/permissions'
+      fullPath: '/permissions'
+      preLoaderRoute: typeof AuthenticatedPermissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/limited': {
+      id: '/_authenticated/limited'
+      path: '/limited'
+      fullPath: '/limited'
+      preLoaderRoute: typeof AuthenticatedLimitedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/home': {
       id: '/_authenticated/home'
       path: '/home'
@@ -220,6 +259,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedForestRoute: typeof AuthenticatedForestRouteWithChildren
   AuthenticatedGoalsRoute: typeof AuthenticatedGoalsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedLimitedRoute: typeof AuthenticatedLimitedRoute
+  AuthenticatedPermissionsRoute: typeof AuthenticatedPermissionsRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
 }
 
@@ -227,6 +268,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedForestRoute: AuthenticatedForestRouteWithChildren,
   AuthenticatedGoalsRoute: AuthenticatedGoalsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedLimitedRoute: AuthenticatedLimitedRoute,
+  AuthenticatedPermissionsRoute: AuthenticatedPermissionsRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
 }
 
@@ -242,3 +285,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -1,12 +1,12 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.treerise',
+  appId: 'com.treerise.app',
   appName: 'TreeRise',
   webDir: 'dist',
   server: {
-    // Point the APK at your live Lovable preview so you don't need a static build.
-    // After you publish, swap this to your published URL (e.g. https://treerise.lovable.app).
+    // Points the APK at the live Lovable preview so updates ship instantly.
+    // Swap to your published URL after release: https://treerise.lovable.app
     url: 'https://id-preview--ef36cee4-0339-40dc-9cae-c353b4d4c887.lovable.app',
     cleartext: true,
   },
@@ -22,6 +22,10 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'LIGHT',
       backgroundColor: '#7BC47F',
+    },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon',
+      iconColor: '#2E7D32',
     },
   },
 };
