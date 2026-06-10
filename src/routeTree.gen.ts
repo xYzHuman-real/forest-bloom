@@ -20,6 +20,7 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedForestRouteImport } from './routes/_authenticated/forest'
 import { Route as AuthenticatedForestShopRouteImport } from './routes/_authenticated/forest.shop'
+import { Route as ApiPublicHooksNativeUsageRouteImport } from './routes/api/public/hooks/native-usage'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -76,6 +77,12 @@ const AuthenticatedForestShopRoute = AuthenticatedForestShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => AuthenticatedForestRoute,
 } as any)
+const ApiPublicHooksNativeUsageRoute =
+  ApiPublicHooksNativeUsageRouteImport.update({
+    id: '/api/public/hooks/native-usage',
+    path: '/api/public/hooks/native-usage',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/permissions': typeof AuthenticatedPermissionsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/forest/shop': typeof AuthenticatedForestShopRoute
+  '/api/public/hooks/native-usage': typeof ApiPublicHooksNativeUsageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
   '/permissions': typeof AuthenticatedPermissionsRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/forest/shop': typeof AuthenticatedForestShopRoute
+  '/api/public/hooks/native-usage': typeof ApiPublicHooksNativeUsageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated/permissions': typeof AuthenticatedPermissionsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/forest/shop': typeof AuthenticatedForestShopRoute
+  '/api/public/hooks/native-usage': typeof ApiPublicHooksNativeUsageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/permissions'
     | '/profile'
     | '/forest/shop'
+    | '/api/public/hooks/native-usage'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/permissions'
     | '/profile'
     | '/forest/shop'
+    | '/api/public/hooks/native-usage'
   id:
     | '__root__'
     | '/'
@@ -153,6 +165,7 @@ export interface FileRouteTypes {
     | '/_authenticated/permissions'
     | '/_authenticated/profile'
     | '/_authenticated/forest/shop'
+    | '/api/public/hooks/native-usage'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -160,6 +173,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
+  ApiPublicHooksNativeUsageRoute: typeof ApiPublicHooksNativeUsageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -241,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedForestShopRouteImport
       parentRoute: typeof AuthenticatedForestRoute
     }
+    '/api/public/hooks/native-usage': {
+      id: '/api/public/hooks/native-usage'
+      path: '/api/public/hooks/native-usage'
+      fullPath: '/api/public/hooks/native-usage'
+      preLoaderRoute: typeof ApiPublicHooksNativeUsageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -281,7 +302,18 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
+  ApiPublicHooksNativeUsageRoute: ApiPublicHooksNativeUsageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
