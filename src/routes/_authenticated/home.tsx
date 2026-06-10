@@ -31,6 +31,30 @@ function HomePage() {
     mutationFn: (v: { app_key: string; minutes_used: number }) => log({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["dashboard"] }),
   });
+  const [debug] = useState(() => isDebugMode());
+
+  // On mount in Android: pull real usage and push into logUsage for each tracked app.
+  useEffect(() => {
+    if (!isNativeAndroid() || !data) return;
+    (async () => {
+      try {
+        const status = await UsageStats.hasUsageAccess();
+        if (!status.granted) return;
+        const { entries } = await UsageStats.getTodayUsage();
+        const byPkg = new Map(entries.map((e) => [e.packageName, e.minutes]));
+        for (const a of data.apps ?? []) {
+          if (!a.enabled) continue;
+          const mins = byPkg.get(a.app_key) ?? 0;
+          await log({ data: { app_key: a.app_key, minutes_used: mins } });
+        }
+        qc.invalidateQueries({ queryKey: ["dashboard"] });
+      } catch (e) {
+        console.warn("native usage sync failed", e);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.apps?.length]);
+
 
   if (isLoading || !data) {
     return <div className="min-h-screen grid place-items-center"><div className="size-12 rounded-full bg-primary/20 animate-pulse" /></div>;
