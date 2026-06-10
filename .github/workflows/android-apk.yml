@@ -39,14 +39,24 @@ jobs:
           if [ ! -d "android" ]; then
             bunx cap add android
           fi
-          bunx cap sync android
+
+      - name: Sync Capacitor
+        run: bunx cap sync android
+
+      - name: Inject UsageStats Kotlin plugin
+        run: node scripts/inject-android-plugin.mjs
+
+      - name: Generate launcher icons and splash from resources/
+        run: |
+          bun add -d @capacitor/assets
+          bunx @capacitor/assets generate --android --iconBackgroundColor '#FFFFFF' --splashBackgroundColor '#F7FBF4' || echo "asset gen warning ignored"
 
       - name: Grant gradlew permission
         run: chmod +x android/gradlew
 
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

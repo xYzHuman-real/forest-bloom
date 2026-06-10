@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from 
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { UsageStats, isNativeAndroid } from "@/native/usageStats";
+import { isDebugMode } from "@/native/debugMode";
 
 export const Route = createFileRoute("/_authenticated/home")({
   ssr: false,
@@ -29,6 +31,30 @@ function HomePage() {
     mutationFn: (v: { app_key: string; minutes_used: number }) => log({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["dashboard"] }),
   });
+  const [debug] = useState(() => isDebugMode());
+
+  // On mount in Android: pull real usage and push into logUsage for each tracked app.
+  useEffect(() => {
+    if (!isNativeAndroid() || !data) return;
+    (async () => {
+      try {
+        const status = await UsageStats.hasUsageAccess();
+        if (!status.granted) return;
+        const { entries } = await UsageStats.getTodayUsage();
+        const byPkg = new Map(entries.map((e) => [e.packageName, e.minutes]));
+        for (const a of data.apps ?? []) {
+          if (!a.enabled) continue;
+          const mins = byPkg.get(a.app_key) ?? 0;
+          await log({ data: { app_key: a.app_key, minutes_used: mins } });
+        }
+        qc.invalidateQueries({ queryKey: ["dashboard"] });
+      } catch (e) {
+        console.warn("native usage sync failed", e);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.apps?.length]);
+
 
   if (isLoading || !data) {
     return <div className="min-h-screen grid place-items-center"><div className="size-12 rounded-full bg-primary/20 animate-pulse" /></div>;
@@ -119,12 +145,14 @@ function HomePage() {
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-xl">Today's usage</h2>
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button size="sm" variant="outline" className="rounded-full h-9 gap-1"><Plus className="size-4" /> Log</Button>
-            </DrawerTrigger>
-            <LogUsageDrawer apps={apps.filter((a: any) => a.enabled)} current={usageEntries} onLog={(app, mins) => logMut.mutate({ app_key: app, minutes_used: mins })} />
-          </Drawer>
+          {debug && (
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button size="sm" variant="outline" className="rounded-full h-9 gap-1"><Plus className="size-4" /> Log</Button>
+              </DrawerTrigger>
+              <LogUsageDrawer apps={apps.filter((a: any) => a.enabled)} current={usageEntries} onLog={(app, mins) => logMut.mutate({ app_key: app, minutes_used: mins })} />
+            </Drawer>
+          )}
         </div>
         <div className="space-y-2.5">
           {usageEntries.filter((u: any) => u.enabled).map((u: any) => <UsageRow key={u.app_key} u={u} />)}
