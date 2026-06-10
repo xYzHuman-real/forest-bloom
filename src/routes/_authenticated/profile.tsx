@@ -1,13 +1,16 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { LogOut, Award, Heart, HelpCircle, Settings } from "lucide-react";
+import { useState } from "react";
+import { LogOut, Award, Heart, HelpCircle, Settings, Shield } from "lucide-react";
+import { toast } from "sonner";
 import { getDashboard } from "@/lib/treerise.functions";
 import { ACHIEVEMENT_DEFS } from "@/lib/treerise/species";
 import { forestHealthPct } from "@/lib/treerise/logic";
 import { CoinPill } from "@/components/CoinPill";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { isDebugMode, setDebugMode } from "@/native/debugMode";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   ssr: false,
