@@ -145,12 +145,14 @@ function HomePage() {
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-xl">Today's usage</h2>
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button size="sm" variant="outline" className="rounded-full h-9 gap-1"><Plus className="size-4" /> Log</Button>
-            </DrawerTrigger>
-            <LogUsageDrawer apps={apps.filter((a: any) => a.enabled)} current={usageEntries} onLog={(app, mins) => logMut.mutate({ app_key: app, minutes_used: mins })} />
-          </Drawer>
+          {debug && (
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button size="sm" variant="outline" className="rounded-full h-9 gap-1"><Plus className="size-4" /> Log</Button>
+              </DrawerTrigger>
+              <LogUsageDrawer apps={apps.filter((a: any) => a.enabled)} current={usageEntries} onLog={(app, mins) => logMut.mutate({ app_key: app, minutes_used: mins })} />
+            </Drawer>
+          )}
         </div>
         <div className="space-y-2.5">
           {usageEntries.filter((u: any) => u.enabled).map((u: any) => <UsageRow key={u.app_key} u={u} />)}
