@@ -82,18 +82,45 @@ function ProfilePage() {
 
       <Section title="Settings" icon={Settings}>
         <div className="soft-card divide-y divide-border">
+          <Link to="/permissions" className="block">
+            <Row label="Permissions &amp; tracking" onClick={() => {}} icon={Shield} />
+          </Link>
           <Row label="Sign out" onClick={signOut} icon={LogOut} />
         </div>
       </Section>
 
       <Section title="Help" icon={HelpCircle}>
         <div className="soft-card p-4 text-sm text-muted-foreground">
-          Questions? In the wrapped Android app, TreeRise will request <em>Usage Access</em> to read screen time automatically. Until then, log usage from the Home screen.
+          TreeRise reads only app names and minutes — never your content. You can revoke Usage Access in Android settings at any time.
         </div>
       </Section>
 
-      <p className="text-center text-[10px] text-muted-foreground mt-8">TreeRise · v0.1 · grow gently</p>
+      <VersionFooter />
     </div>
+  );
+}
+
+function VersionFooter() {
+  const [taps, setTaps] = useState(0);
+  const [debug, setDebug] = useState(isDebugMode());
+  const onTap = () => {
+    const n = taps + 1;
+    setTaps(n);
+    if (n >= 5) {
+      const next = !debug;
+      setDebugMode(next);
+      setDebug(next);
+      setTaps(0);
+      toast.message(next ? "Debug mode on — manual Log enabled" : "Debug mode off");
+    }
+  };
+  return (
+    <p
+      onClick={onTap}
+      className="text-center text-[10px] text-muted-foreground mt-8 select-none"
+    >
+      TreeRise · v0.1 · grow gently {debug ? "· debug" : ""}
+    </p>
   );
 }
 
