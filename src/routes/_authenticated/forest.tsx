@@ -1,18 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Store, Trees as TreesIcon } from "lucide-react";
+import { Store, Trees as TreesIcon, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { getDashboard, reviveTree } from "@/lib/treerise.functions";
+import { getDashboard, reviveTree, startRevivalMission, claimChest } from "@/lib/treerise.functions";
 import { forestHealthPct } from "@/lib/treerise/logic";
 import { SPECIES_BY_KEY } from "@/lib/treerise/species";
+import { levelFor, nextLevel, EVOLUTION, ISLAND_CAPACITY } from "@/lib/treerise/levels";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { TreeIcon } from "@/components/TreeIcon";
 import { CoinPill } from "@/components/CoinPill";
+import { RewardChest } from "@/components/RewardChest";
 
 const ForestScene = lazy(() => import("@/components/ForestScene").then((m) => ({ default: m.ForestScene })));
 
