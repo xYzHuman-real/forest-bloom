@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { getDashboard } from "@/lib/treerise.functions";
 import { ACHIEVEMENT_DEFS } from "@/lib/treerise/species";
 import { forestHealthPct } from "@/lib/treerise/logic";
+import { levelFor, FOREST_LEVELS } from "@/lib/treerise/levels";
 import { CoinPill } from "@/components/CoinPill";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
