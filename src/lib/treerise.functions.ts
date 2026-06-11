@@ -347,11 +347,12 @@ export const claimChest = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: chest } = await supabase.from("daily_chests").select("*").eq("user_id", userId).eq("day", data.day).maybeSingle();
     if (!chest) throw new Error("No chest for that day");
-    if (chest.opened) return { ok: true, alreadyOpened: true, reward: chest.reward_payload };
-    const reward = chest.reward_payload ?? { coins: 50 };
-    if (reward?.coins) {
+    if (chest.opened) return { ok: true, alreadyOpened: true, reward: chest.reward_payload as any };
+    const reward = (chest.reward_payload as any) ?? { coins: 50 };
+    const coinsReward = Number(reward?.coins ?? 0);
+    if (coinsReward > 0) {
       const { data: prof } = await supabase.from("profiles").select("coins").eq("id", userId).single();
-      await supabase.from("profiles").update({ coins: (prof?.coins ?? 0) + reward.coins }).eq("id", userId);
+      await supabase.from("profiles").update({ coins: (prof?.coins ?? 0) + coinsReward }).eq("id", userId);
     }
     await supabase.from("daily_chests").update({ opened: true, opened_at: new Date().toISOString() }).eq("id", chest.id);
     return { ok: true, reward };
