@@ -1,61 +1,68 @@
-## TreeRise — Core Slice Plan
+# TreeRise V2 Build Plan
 
-A mobile-first PWA where daily screen-time discipline grows a virtual forest. Cloud-backed auth + persistence, premium white/green Apple-style UI, hybrid 3D island with 2D tree sprites.
+Keeps all V1 features intact. Adds long-term retention + progression on top.
 
-### Stack & setup
-- TanStack Start + Tailwind v4, mobile-first (max-w viewport, safe-area padding).
-- Lovable Cloud: email auth (optional Google later), Postgres for user state.
-- PWA manifest + icons (installable, no offline SW for MVP).
-- `@react-three/fiber` + `@react-three/drei` for the 3D island; trees rendered as billboarded sprite planes.
-- `framer-motion` for screen transitions, reward animations, growth-stage pops.
-- Mock screen-time data with an editable "Log usage" sheet (browsers can't read OS usage).
+## 1. Database changes (one migration)
 
-### Design system (src/styles.css)
-- Bright white background `oklch(0.99 0.005 145)`, soft green primary `oklch(0.72 0.13 150)`, deep forest accent, warm coin gold, leaf-fall amber, dying red.
-- Display font: "Fraunces" (serif headings, premium feel); body: "Inter Tight".
-- Rounded-3xl cards, soft layered shadows (`0 10px 30px -12px green/15%`), subtle noise/grain.
-- Bottom tab bar: floating pill, 4 icons (Home, Forest, Goals, Profile).
+New + altered tables:
 
-### Data model (Cloud)
-- `profiles` (id, display_name, avatar_seed, created_at, coins, current_streak, longest_streak)
-- `tracked_apps` (user_id, app_key, daily_limit_min) — Instagram, YouTube, Shorts, Facebook, X, Games
-- `usage_logs` (user_id, day, app_key, minutes_used)
-- `trees` (id, user_id, species, planted_on, state: healthy|weak|dying|dead|reviving, growth_pct, position_x, position_y)
-- `unlocked_species` (user_id, species)
-- `achievements` (user_id, key, unlocked_on)
-- `daily_summary` view → drives growth/death logic
-- RLS scoped to `auth.uid()`; standard grants per template.
+- `trees`: add `island_index int default 0`, `revived_at timestamptz`, `died_on date`.
+- `daily_summaries` (new) — one row per user per day, the source of truth for the calendar:
+  - `user_id, day date, state ('healthy'|'weak'|'dying'|'dead'|'none'), tree_id uuid null, species text null, coins_earned int, usage_json jsonb` (per-app minutes snapshot).
+  - Filled when `logUsage` runs / at end of day; back-filled lazily when calendar is opened.
+- `daily_chests` (new) — `user_id, day date, opened bool, reward_kind, reward_payload jsonb`. One chest per successful day, claimable for 48h.
+- `islands` (new) — `user_id, index int, level int, unlocked_on date, name text`.
+- `profiles`: add `forest_started_on date`, `total_healthy int`, `total_dead int` (denormalized counters, updated by trigger on trees).
 
-### Tree lifecycle (server fn `tickDay`)
-Inputs: today's usage vs limits.
-- All apps ≤ 100% → tree healthy, +growth (stage by age in days: 0–1 Seed, 2–3 Sprout, 4–6 Growing, 7–13 Thriving, 14+ Mature). +50 coins. +100 if usage ≤ 50% all apps.
-- Any app 100–125% → state `weak`, leaves falling animation flag.
-- Any app 125–175% → `dying`.
-- Any app >175% or 2+ apps over → `dead`.
-- Streak resets on dead; +500 at 7-day streak, +1000 weekly perfect.
-- Revive: 200 coins OR 3 consecutive perfect days.
+All with RLS scoped to `auth.uid()` and the standard GRANTs.
 
-### Screens
-1. **Onboarding** (3 slides + auth): concept, app picker w/ default limits, sign-in. Mock "Grant usage access" step with explainer.
-2. **Home**: greeting, today's tree card (species, growth ring, stage illustration), forest-health %, coin pill, usage list with progress bars + dynamic warning copy, quick "+log usage" sheet for the MVP.
-3. **Forest** (centerpiece):
-   - R3F canvas: low-poly floating island (custom geometry + grass texture), animated water plane, drifting clouds, ambient birds/butterflies that unlock at milestones.
-   - Trees placed via deterministic seed positioning; each tree is a textured plane (sprite per species/state) that always faces camera.
-   - Touch: pinch-zoom, drag-pan (OrbitControls clamped). Tap tree → bottom sheet with name, age, state, planted date, revive button.
-   - Stats header: healthy / dead / age / health %.
-   - Floating "Shop" FAB.
-4. **Tree Shop**: grid of seeds (Common/Rare/Legendary tabs), price, lock state, purchase confirm. Legendaries show milestone progress, not buy button.
-5. **Goals**: app toggles, per-app daily limit sliders, weekly/monthly progress rings (Recharts radial), streak calendar.
-6. **Profile**: avatar (DiceBear seed), stats grid, streak ring, achievements grid (locked/unlocked), settings (theme, sign out, reset).
-7. **Reward overlay**: full-screen Framer Motion confetti + tree reveal for milestone unlocks.
+## 2. Server functions (`src/lib/treerise.functions.ts`)
 
-### Routing (TanStack)
-- Public: `/`, `/auth`, `/onboarding`
-- Authenticated layout `/_authenticated/`: `home`, `forest`, `forest/shop`, `goals`, `profile`
-- Server fns in `src/lib/treerise.functions.ts` (`getDashboard`, `logUsage`, `tickDay`, `purchaseTree`, `reviveTree`, `updateGoals`).
+- `getCalendar({ year, month })` — returns 42 day cells with state + summary.
+- `getDayDetail({ day })` — full breakdown for one date.
+- `getIslands()` — list + current island; auto-creates next island when current is full (cap 30 trees/island).
+- `getForestStats()` — age, healthy/dead totals, success %, level.
+- `claimChest({ day })` — atomic claim, grants coins/seed/decoration.
+- `startRevivalMission({ tree_id })` / `progressRevivalMission()` — tracks 3-day streak; on success flips tree to `reviving` for free.
+- Extend `logUsage` to write `daily_summaries` and create a chest when day is healthy.
 
-### Out of scope for this build (follow-up)
-Weather system, seasons, milestone reward cinematics beyond basic confetti, ecosystem creatures past butterflies/birds toggle, deer/ancient forest visuals, native Capacitor wrap with real Android usage access.
+## 3. Frontend routes
 
-### Deliverable
-A polished, installable mobile web app you can use end-to-end with mock usage input; every system (growth, death, coins, shop, achievements, streaks) is wired to Cloud so progress persists across devices.
+- `/_authenticated/forest` — add top toggle `🌳 Forest | 📅 Calendar`. Forest view unchanged + horizontal island swiper (Embla).
+- `/_authenticated/forest/calendar` — month grid, prev/next month, year picker. Each cell renders a small emoji/icon for state.
+- `/_authenticated/forest/day/$day` — Day Details screen with tree illustration, usage bars, coins, status.
+- `/_authenticated/profile` — append Forest Age, totals, success %, level card.
+- New components: `CalendarMonth`, `DayCell`, `IslandSwiper`, `LevelBadge`, `EvolutionLayer` (renders birds/butterflies/pond/waterfall/deer based on healthy count — extends existing `ForestScene`), `RewardChest` (framer-motion open animation), `RevivalMissionCard`.
+
+## 4. Forest levels + evolution
+
+Pure derived state from `total_healthy`:
+- Levels: 0/25/75/200/500 healthy → Seedling / Young / Growing / Reserve / Ancient.
+- Evolution thresholds (10/20/50/100/200/500) wired into `ForestScene` — birds and butterflies already exist; add pond upgrade, waterfall mesh, deer billboard, denser tree backdrop for Ancient.
+
+## 5. Multi-island
+
+- New trees default to current island (last with <30 trees). When full, auto-insert next island row. UI shows dots + swipe between islands; each island is its own `<ForestScene trees={...} level={...} />`.
+
+## 6. Daily chest + revival missions
+
+- After a healthy day, show `RewardChest` on Home with tap-to-open animation (spring scale + confetti via framer-motion only, no extra deps).
+- Revival mission: from tree drawer on a dead tree, "Start revival mission" → tracked via 3 consecutive successful daily_summaries; auto-completes and animates tree → reviving.
+
+## 7. Notifications
+
+Extend `src/native/notifications.ts` with a new supportive template:
+`"🍂 Your {species} Tree is losing leaves."` — fired by the existing native sync when any tracked app crosses 85% of its limit.
+
+## 8. Out of scope (explicit)
+
+No chatbot, feed, posts, reels, marketplace. No changes to auth, onboarding, or APK pipeline.
+
+## Order of execution
+
+1. Migration (single call, awaits approval).
+2. After approval: server fns + frontend components + routes in parallel batches.
+3. Wire evolution thresholds into `ForestScene`.
+4. Smoke-test in preview, then ready for next APK build.
+
+Estimated ~15 new files + edits to 6 existing. No new npm deps.
