@@ -60,6 +60,10 @@ function ProfilePage() {
         <Stat label="Health" value={`${health}%`} />
       </div>
 
+      <Section title="Forest" icon={Award}>
+        <ForestStats trees={data.trees} profile={data.profile} />
+      </Section>
+
       <Section title="Achievements" icon={Award}>
         <div className="grid grid-cols-3 gap-2.5">
           {ACHIEVEMENT_DEFS.map((a) => {
