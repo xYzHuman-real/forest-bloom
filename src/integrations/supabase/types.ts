@@ -32,6 +32,108 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_chests: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          opened: boolean
+          opened_at: string | null
+          reward_kind: string | null
+          reward_payload: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          opened?: boolean
+          opened_at?: string | null
+          reward_kind?: string | null
+          reward_payload?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          opened?: boolean
+          opened_at?: string | null
+          reward_kind?: string | null
+          reward_payload?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_summaries: {
+        Row: {
+          coins_earned: number
+          created_at: string
+          day: string
+          id: string
+          species: string | null
+          state: string
+          tree_id: string | null
+          updated_at: string
+          usage_json: Json
+          user_id: string
+        }
+        Insert: {
+          coins_earned?: number
+          created_at?: string
+          day: string
+          id?: string
+          species?: string | null
+          state?: string
+          tree_id?: string | null
+          updated_at?: string
+          usage_json?: Json
+          user_id: string
+        }
+        Update: {
+          coins_earned?: number
+          created_at?: string
+          day?: string
+          id?: string
+          species?: string | null
+          state?: string
+          tree_id?: string | null
+          updated_at?: string
+          usage_json?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      islands: {
+        Row: {
+          created_at: string
+          id: string
+          index: number
+          level: number
+          name: string
+          unlocked_on: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          index: number
+          level?: number
+          name?: string
+          unlocked_on?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          index?: number
+          level?: number
+          name?: string
+          unlocked_on?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_seed: string
@@ -39,9 +141,13 @@ export type Database = {
           created_at: string
           current_streak: number
           display_name: string | null
+          forest_level: number
+          forest_started_on: string
           id: string
           longest_streak: number
           onboarded: boolean
+          total_dead: number
+          total_healthy: number
           updated_at: string
         }
         Insert: {
@@ -50,9 +156,13 @@ export type Database = {
           created_at?: string
           current_streak?: number
           display_name?: string | null
+          forest_level?: number
+          forest_started_on?: string
           id: string
           longest_streak?: number
           onboarded?: boolean
+          total_dead?: number
+          total_healthy?: number
           updated_at?: string
         }
         Update: {
@@ -61,10 +171,50 @@ export type Database = {
           created_at?: string
           current_streak?: number
           display_name?: string | null
+          forest_level?: number
+          forest_started_on?: string
           id?: string
           longest_streak?: number
           onboarded?: boolean
+          total_dead?: number
+          total_healthy?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      revival_missions: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          last_progress_day: string | null
+          started_on: string
+          successful_days: number
+          tree_id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_progress_day?: string | null
+          started_on?: string
+          successful_days?: number
+          tree_id: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_progress_day?: string | null
+          started_on?: string
+          successful_days?: number
+          tree_id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -92,33 +242,42 @@ export type Database = {
       trees: {
         Row: {
           created_at: string
+          died_on: string | null
           growth_pct: number
           id: string
+          island_index: number
           planted_on: string
           position_x: number
           position_z: number
+          revived_at: string | null
           species: string
           state: Database["public"]["Enums"]["tree_state"]
           user_id: string
         }
         Insert: {
           created_at?: string
+          died_on?: string | null
           growth_pct?: number
           id?: string
+          island_index?: number
           planted_on?: string
           position_x?: number
           position_z?: number
+          revived_at?: string | null
           species?: string
           state?: Database["public"]["Enums"]["tree_state"]
           user_id: string
         }
         Update: {
           created_at?: string
+          died_on?: string | null
           growth_pct?: number
           id?: string
+          island_index?: number
           planted_on?: string
           position_x?: number
           position_z?: number
+          revived_at?: string | null
           species?: string
           state?: Database["public"]["Enums"]["tree_state"]
           user_id?: string

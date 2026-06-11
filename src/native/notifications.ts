@@ -55,3 +55,17 @@ export async function notifyAtRisk(appName: string, remainingMin: number) {
     ],
   });
 }
+
+export async function notifyTreeLosingLeaves(speciesName: string) {
+  if (!Capacitor.isNativePlatform()) return;
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: Math.floor(Math.random() * 100000),
+        title: `🍂 Your ${speciesName} Tree is losing leaves`,
+        body: "A short break protects today's growth.",
+        smallIcon: "ic_stat_icon",
+      },
+    ],
+  });
+}

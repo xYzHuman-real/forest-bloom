@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { getDashboard } from "@/lib/treerise.functions";
 import { ACHIEVEMENT_DEFS } from "@/lib/treerise/species";
 import { forestHealthPct } from "@/lib/treerise/logic";
+import { levelFor, FOREST_LEVELS } from "@/lib/treerise/levels";
 import { CoinPill } from "@/components/CoinPill";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +59,10 @@ function ProfilePage() {
         <Stat label="Streak" value={`${data.profile?.current_streak ?? 0}`} />
         <Stat label="Health" value={`${health}%`} />
       </div>
+
+      <Section title="Forest" icon={Award}>
+        <ForestStats trees={data.trees} profile={data.profile} />
+      </Section>
 
       <Section title="Achievements" icon={Award}>
         <div className="grid grid-cols-3 gap-2.5">
@@ -129,6 +134,53 @@ function Stat({ label, value }: { label: string; value: any }) {
     <div className="soft-card p-2.5 text-center">
       <div className="font-display text-lg leading-none">{value}</div>
       <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-1">{label}</div>
+    </div>
+  );
+}
+
+function ForestStats({ trees, profile }: { trees: any[]; profile: any }) {
+  const healthy = trees.filter((t) => t.state === "healthy" || t.state === "reviving").length;
+  const dead = trees.filter((t) => t.state === "dead").length;
+  const total = trees.length;
+  const successRate = total === 0 ? 0 : Math.round((healthy / total) * 100);
+  const startedOn = profile?.forest_started_on ? new Date(profile.forest_started_on) : (trees.length ? new Date(trees[trees.length - 1].planted_on) : new Date());
+  const months = Math.max(0, Math.floor((Date.now() - startedOn.getTime()) / (30 * 86400000)));
+  const years = Math.floor(months / 12);
+  const remM = months % 12;
+  const ageLabel = years === 0 ? `${months} month${months === 1 ? "" : "s"}` : `${years} year${years === 1 ? "" : "s"} ${remM} month${remM === 1 ? "" : "s"}`;
+  const level = levelFor(healthy);
+  const nextL = FOREST_LEVELS.find((l) => l.minHealthy > healthy);
+
+  return (
+    <div className="space-y-3">
+      <div className="soft-card p-4">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">Forest age</div>
+        <div className="font-display text-2xl mt-1">{ageLabel}</div>
+        <div className="text-xs text-muted-foreground mt-1">Started {startedOn.toLocaleDateString()}</div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <Stat label="Healthy" value={healthy} />
+        <Stat label="Dead" value={dead} />
+        <Stat label="Success" value={`${successRate}%`} />
+      </div>
+      <div className="soft-card p-4 bg-gradient-to-br from-emerald-50 to-background">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Forest level</div>
+            <div className="font-display text-xl mt-1">L{level.level} · {level.name}</div>
+            <div className="text-xs text-muted-foreground mt-1">{level.blurb}</div>
+          </div>
+          <div className="size-14 rounded-2xl grid place-items-center bg-primary/10 font-display text-primary text-2xl">{level.level}</div>
+        </div>
+        {nextL && (
+          <div className="mt-3">
+            <div className="text-[11px] text-muted-foreground mb-1">{nextL.minHealthy - healthy} healthy trees to {nextL.name}</div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-full bg-primary" style={{ width: `${Math.min(100, (healthy / nextL.minHealthy) * 100)}%` }} />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

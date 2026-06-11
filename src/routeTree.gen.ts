@@ -20,7 +20,9 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedGoalsRouteImport } from './routes/_authenticated/goals'
 import { Route as AuthenticatedForestRouteImport } from './routes/_authenticated/forest'
 import { Route as AuthenticatedForestShopRouteImport } from './routes/_authenticated/forest.shop'
+import { Route as AuthenticatedForestCalendarRouteImport } from './routes/_authenticated/forest.calendar'
 import { Route as ApiPublicHooksNativeUsageRouteImport } from './routes/api/public/hooks/native-usage'
+import { Route as AuthenticatedForestDayDayRouteImport } from './routes/_authenticated/forest.day.$day'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -77,11 +79,23 @@ const AuthenticatedForestShopRoute = AuthenticatedForestShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => AuthenticatedForestRoute,
 } as any)
+const AuthenticatedForestCalendarRoute =
+  AuthenticatedForestCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedForestRoute,
+  } as any)
 const ApiPublicHooksNativeUsageRoute =
   ApiPublicHooksNativeUsageRouteImport.update({
     id: '/api/public/hooks/native-usage',
     path: '/api/public/hooks/native-usage',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedForestDayDayRoute =
+  AuthenticatedForestDayDayRouteImport.update({
+    id: '/day/$day',
+    path: '/day/$day',
+    getParentRoute: () => AuthenticatedForestRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -94,7 +108,9 @@ export interface FileRoutesByFullPath {
   '/limited': typeof AuthenticatedLimitedRoute
   '/permissions': typeof AuthenticatedPermissionsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/forest/calendar': typeof AuthenticatedForestCalendarRoute
   '/forest/shop': typeof AuthenticatedForestShopRoute
+  '/forest/day/$day': typeof AuthenticatedForestDayDayRoute
   '/api/public/hooks/native-usage': typeof ApiPublicHooksNativeUsageRoute
 }
 export interface FileRoutesByTo {
@@ -107,7 +123,9 @@ export interface FileRoutesByTo {
   '/limited': typeof AuthenticatedLimitedRoute
   '/permissions': typeof AuthenticatedPermissionsRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/forest/calendar': typeof AuthenticatedForestCalendarRoute
   '/forest/shop': typeof AuthenticatedForestShopRoute
+  '/forest/day/$day': typeof AuthenticatedForestDayDayRoute
   '/api/public/hooks/native-usage': typeof ApiPublicHooksNativeUsageRoute
 }
 export interface FileRoutesById {
@@ -122,7 +140,9 @@ export interface FileRoutesById {
   '/_authenticated/limited': typeof AuthenticatedLimitedRoute
   '/_authenticated/permissions': typeof AuthenticatedPermissionsRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/forest/calendar': typeof AuthenticatedForestCalendarRoute
   '/_authenticated/forest/shop': typeof AuthenticatedForestShopRoute
+  '/_authenticated/forest/day/$day': typeof AuthenticatedForestDayDayRoute
   '/api/public/hooks/native-usage': typeof ApiPublicHooksNativeUsageRoute
 }
 export interface FileRouteTypes {
@@ -137,7 +157,9 @@ export interface FileRouteTypes {
     | '/limited'
     | '/permissions'
     | '/profile'
+    | '/forest/calendar'
     | '/forest/shop'
+    | '/forest/day/$day'
     | '/api/public/hooks/native-usage'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -150,7 +172,9 @@ export interface FileRouteTypes {
     | '/limited'
     | '/permissions'
     | '/profile'
+    | '/forest/calendar'
     | '/forest/shop'
+    | '/forest/day/$day'
     | '/api/public/hooks/native-usage'
   id:
     | '__root__'
@@ -164,7 +188,9 @@ export interface FileRouteTypes {
     | '/_authenticated/limited'
     | '/_authenticated/permissions'
     | '/_authenticated/profile'
+    | '/_authenticated/forest/calendar'
     | '/_authenticated/forest/shop'
+    | '/_authenticated/forest/day/$day'
     | '/api/public/hooks/native-usage'
   fileRoutesById: FileRoutesById
 }
@@ -255,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedForestShopRouteImport
       parentRoute: typeof AuthenticatedForestRoute
     }
+    '/_authenticated/forest/calendar': {
+      id: '/_authenticated/forest/calendar'
+      path: '/calendar'
+      fullPath: '/forest/calendar'
+      preLoaderRoute: typeof AuthenticatedForestCalendarRouteImport
+      parentRoute: typeof AuthenticatedForestRoute
+    }
     '/api/public/hooks/native-usage': {
       id: '/api/public/hooks/native-usage'
       path: '/api/public/hooks/native-usage'
@@ -262,15 +295,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksNativeUsageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/forest/day/$day': {
+      id: '/_authenticated/forest/day/$day'
+      path: '/day/$day'
+      fullPath: '/forest/day/$day'
+      preLoaderRoute: typeof AuthenticatedForestDayDayRouteImport
+      parentRoute: typeof AuthenticatedForestRoute
+    }
   }
 }
 
 interface AuthenticatedForestRouteChildren {
+  AuthenticatedForestCalendarRoute: typeof AuthenticatedForestCalendarRoute
   AuthenticatedForestShopRoute: typeof AuthenticatedForestShopRoute
+  AuthenticatedForestDayDayRoute: typeof AuthenticatedForestDayDayRoute
 }
 
 const AuthenticatedForestRouteChildren: AuthenticatedForestRouteChildren = {
+  AuthenticatedForestCalendarRoute: AuthenticatedForestCalendarRoute,
   AuthenticatedForestShopRoute: AuthenticatedForestShopRoute,
+  AuthenticatedForestDayDayRoute: AuthenticatedForestDayDayRoute,
 }
 
 const AuthenticatedForestRouteWithChildren =
@@ -307,13 +351,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
