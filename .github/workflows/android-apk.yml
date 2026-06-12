@@ -34,8 +34,10 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build web assets (dist/)
-        run: bunx vite build
+      - name: Create stub web assets (APK loads from server.url)
+        run: |
+          mkdir -p dist
+          echo '<!doctype html><meta http-equiv="refresh" content="0; url=https://id-preview--ef36cee4-0339-40dc-9cae-c353b4d4c887.lovable.app">' > dist/index.html
 
       - name: Add Android platform (if missing)
         run: |
