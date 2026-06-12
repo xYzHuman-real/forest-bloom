@@ -1,11 +1,6 @@
 #!/usr/bin/env node
-// Injects the custom UsageStats Kotlin plugin into the Capacitor-generated android/ project.
+// Injects the custom UsageStats Java plugin into the Capacitor-generated android/ project.
 // Idempotent: safe to re-run after `cap sync`.
-//
-// - Copies android-plugin-src/java/** into android/app/src/main/java/**
-// - Registers the plugin in MainActivity.java
-// - Adds required <uses-permission> entries to AndroidManifest.xml
-// - Adds the WorkManager runtime dependency to app/build.gradle
 
 import fs from "node:fs";
 import path from "node:path";
@@ -30,56 +25,52 @@ function copyDir(src, dest) {
   }
 }
 
-console.log("[inject] Copying Kotlin sources …");
+console.log("[inject] Copying Java sources …");
 copyDir(JAVA_SRC, JAVA_DEST);
 
-// --- Register plugin in MainActivity ---
-const mainActivityCandidates = [
-  "android/app/src/main/java/com/treerise/app/MainActivity.java",
-  "android/app/src/main/java/com/treerise/app/MainActivity.kt",
-];
-let mainActivityPath = mainActivityCandidates
-  .map((p) => path.join(root, p))
-  .find((p) => fs.existsSync(p));
-
-if (mainActivityPath) {
+// --- Register plugin in MainActivity (Java) ---
+const mainActivityPath = path.join(
+  ANDROID,
+  "app/src/main/java/com/treerise/app/MainActivity.java",
+);
+if (fs.existsSync(mainActivityPath)) {
   let src = fs.readFileSync(mainActivityPath, "utf8");
-  const isKotlin = mainActivityPath.endsWith(".kt");
   if (!src.includes("UsageStatsPlugin")) {
-    if (isKotlin) {
+    if (!src.includes("import com.treerise.app.usage.UsageStatsPlugin;")) {
       src = src.replace(
-        /class MainActivity[^{]*\{/,
-        (m) =>
-          `import com.treerise.app.usage.UsageStatsPlugin\nimport android.os.Bundle\n\n${m}\n  override fun onCreate(savedInstanceState: Bundle?) {\n    registerPlugin(UsageStatsPlugin::class.java)\n    super.onCreate(savedInstanceState)\n  }\n`,
-      );
-    } else {
-      src = src.replace(
-        /public class MainActivity[^{]*\{/,
-        (m) =>
-          `import com.treerise.app.usage.UsageStatsPlugin;\nimport android.os.Bundle;\n\n${m}\n  @Override\n  public void onCreate(Bundle savedInstanceState) {\n    registerPlugin(UsageStatsPlugin.class);\n    super.onCreate(savedInstanceState);\n  }\n`,
+        /(package [^;]+;\s*)/,
+        `$1\nimport android.os.Bundle;\nimport com.treerise.app.usage.UsageStatsPlugin;\n`,
       );
     }
+    src = src.replace(
+      /public class MainActivity[^{]*\{/,
+      (m) =>
+        `${m}\n  @Override\n  public void onCreate(Bundle savedInstanceState) {\n    registerPlugin(UsageStatsPlugin.class);\n    super.onCreate(savedInstanceState);\n  }\n`,
+    );
     fs.writeFileSync(mainActivityPath, src);
     console.log("[inject] Registered UsageStatsPlugin in MainActivity");
   } else {
     console.log("[inject] MainActivity already registers UsageStatsPlugin");
   }
 } else {
-  console.warn("[inject] MainActivity not found — skipped registration");
+  console.warn("[inject] MainActivity.java not found — skipped registration");
 }
 
 // --- Patch AndroidManifest.xml ---
 const manifestPath = path.join(ANDROID, "app/src/main/AndroidManifest.xml");
 if (fs.existsSync(manifestPath)) {
   let mf = fs.readFileSync(manifestPath, "utf8");
-  if (!mf.includes('xmlns:tools=')) {
+  if (!mf.includes("xmlns:tools=")) {
     mf = mf.replace(
       /<manifest /,
       '<manifest xmlns:tools="http://schemas.android.com/tools" ',
     );
   }
   const perms = fs
-    .readFileSync(path.join(root, "android-plugin-src/manifest/permissions.xml"), "utf8")
+    .readFileSync(
+      path.join(root, "android-plugin-src/manifest/permissions.xml"),
+      "utf8",
+    )
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.startsWith("<uses-permission"));
@@ -93,46 +84,17 @@ if (fs.existsSync(manifestPath)) {
   console.log("[inject] Manifest permissions ensured");
 }
 
-// --- Add WorkManager dependency to app/build.gradle ---
+// --- Add WorkManager runtime dependency ---
 const gradlePath = path.join(ANDROID, "app/build.gradle");
 if (fs.existsSync(gradlePath)) {
   let g = fs.readFileSync(gradlePath, "utf8");
   if (!g.includes("androidx.work:work-runtime")) {
     g = g.replace(
       /dependencies\s*\{/,
-      (m) =>
-        `${m}\n    implementation "androidx.work:work-runtime-ktx:2.9.1"\n    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"`,
+      (m) => `${m}\n    implementation "androidx.work:work-runtime:2.9.1"`,
     );
     fs.writeFileSync(gradlePath, g);
-    console.log("[inject] Added WorkManager + Kotlin stdlib dependency");
-  }
-}
-
-// --- Ensure project-level kotlin plugin ---
-const projectGradle = path.join(ANDROID, "build.gradle");
-if (fs.existsSync(projectGradle)) {
-  let g = fs.readFileSync(projectGradle, "utf8");
-  if (!g.includes("kotlin-gradle-plugin")) {
-    g = g.replace(
-      /dependencies\s*\{/,
-      (m) =>
-        `${m}\n        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24"`,
-    );
-    fs.writeFileSync(projectGradle, g);
-    console.log("[inject] Added Kotlin gradle plugin to project build.gradle");
-  }
-}
-
-// --- Apply kotlin-android plugin in app/build.gradle ---
-if (fs.existsSync(gradlePath)) {
-  let g = fs.readFileSync(gradlePath, "utf8");
-  if (!g.includes("kotlin-android")) {
-    g = g.replace(
-      /apply plugin: 'com\.android\.application'/,
-      `apply plugin: 'com.android.application'\napply plugin: 'kotlin-android'`,
-    );
-    fs.writeFileSync(gradlePath, g);
-    console.log("[inject] Applied kotlin-android plugin");
+    console.log("[inject] Added WorkManager dependency");
   }
 }
 
