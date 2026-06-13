@@ -155,7 +155,10 @@ async function ensureTodayTree(supabase: any, userId: string) {
   const species = pool[Math.floor(Math.random() * pool.length)];
 
   const islandIndex = await ensureIslandForNewTree(supabase, userId);
-  const pos = pseudoPos(`${userId}-${today}`);
+  const { count: islandTreeCount } = await supabase
+    .from("trees").select("id", { count: "exact", head: true })
+    .eq("user_id", userId).eq("island_index", islandIndex);
+  const pos = phyllotaxisPos(islandTreeCount ?? 0);
   const { data: inserted } = await supabase
     .from("trees")
     .insert({ user_id: userId, species, planted_on: today, state: "healthy", growth_pct: 5, position_x: pos.x, position_z: pos.z, island_index: islandIndex })
