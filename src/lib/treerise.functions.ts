@@ -190,11 +190,30 @@ export const getDashboard = createServerFn({ method: "GET" })
       supabase.from("revival_missions").select("*").eq("user_id", userId).eq("completed", false),
     ]);
 
+    // Re-derive positions per-island using phyllotaxis so legacy/overlapping
+    // stored positions don't stack trees on top of each other.
+    const allTrees = (trees ?? []) as any[];
+    const byIsland = new Map<number, any[]>();
+    for (const t of allTrees) {
+      const k = t.island_index ?? 0;
+      if (!byIsland.has(k)) byIsland.set(k, []);
+      byIsland.get(k)!.push(t);
+    }
+    const repositioned: any[] = [];
+    for (const [, group] of byIsland) {
+      group.sort((a, b) => (a.planted_on < b.planted_on ? -1 : a.planted_on > b.planted_on ? 1 : 0));
+      group.forEach((t, i) => {
+        const p = phyllotaxisPos(i);
+        repositioned.push({ ...t, position_x: p.x, position_z: p.z });
+      });
+    }
+    repositioned.sort((a, b) => (a.planted_on < b.planted_on ? 1 : -1));
+
     return {
       profile,
       apps: apps ?? [],
       usageToday: usage ?? [],
-      trees: trees ?? [],
+      trees: repositioned,
       todayTree,
       unlockedSpecies: (unlocked ?? []).map((u: any) => u.species),
       achievements: achievements ?? [],
