@@ -15,7 +15,7 @@ function SplashScreen() {
   useEffect(() => {
     const start = Date.now();
     const decide = async () => {
-      let target: "/home" | "/auth" | "/welcome" = "/welcome";
+      let target: "/home" | "/auth" | "/welcome" | "/onboarding" = "/welcome";
       try {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
