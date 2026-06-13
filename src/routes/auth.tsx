@@ -48,6 +48,18 @@ function AuthPage() {
     if (res.error) toast.error("Google sign-in failed");
   };
 
+  const onForgot = async () => {
+    if (!email) {
+      toast.error("Enter your email first, then tap Forgot password");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Check your inbox for a reset link");
+  };
+
   return (
     <div className="min-h-screen flex flex-col safe-top safe-bottom px-6 pt-14 pb-8">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
@@ -83,6 +95,11 @@ function AuthPage() {
         <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-semibold">
           {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
         </Button>
+        {mode === "signin" && (
+          <button type="button" onClick={onForgot} className="block w-full text-center text-sm text-primary font-medium pt-1">
+            Forgot password?
+          </button>
+        )}
       </form>
 
       <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
