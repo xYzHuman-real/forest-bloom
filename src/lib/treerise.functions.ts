@@ -5,14 +5,13 @@ import { evaluateState, computeGrowth, todayUTC, type TreeState } from "./treeri
 import { SPECIES_BY_KEY, MILESTONE_GIFTS, ACHIEVEMENT_DEFS } from "./treerise/species";
 import { ISLAND_CAPACITY, levelFor } from "./treerise/levels";
 
-function pseudoPos(seed: string): { x: number; z: number } {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
-  const r1 = ((h >>> 0) % 1000) / 1000;
-  const r2 = (((h >>> 10) >>> 0) % 1000) / 1000;
-  const radius = 1.5 + r1 * 4.5;
-  const angle = r2 * Math.PI * 2;
-  return { x: Math.cos(angle) * radius, z: Math.sin(angle) * radius };
+// Sunflower / phyllotaxis layout — guarantees non-overlapping tree positions
+// across an island regardless of how many trees have been planted.
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+function phyllotaxisPos(index: number): { x: number; z: number } {
+  const r = Math.sqrt((index + 0.5) / ISLAND_CAPACITY) * 5.6;
+  const angle = index * GOLDEN_ANGLE;
+  return { x: Math.cos(angle) * r, z: Math.sin(angle) * r };
 }
 
 async function ensureIslandForNewTree(supabase: any, userId: string): Promise<number> {
@@ -156,7 +155,10 @@ async function ensureTodayTree(supabase: any, userId: string) {
   const species = pool[Math.floor(Math.random() * pool.length)];
 
   const islandIndex = await ensureIslandForNewTree(supabase, userId);
-  const pos = pseudoPos(`${userId}-${today}`);
+  const { count: islandTreeCount } = await supabase
+    .from("trees").select("id", { count: "exact", head: true })
+    .eq("user_id", userId).eq("island_index", islandIndex);
+  const pos = phyllotaxisPos(islandTreeCount ?? 0);
   const { data: inserted } = await supabase
     .from("trees")
     .insert({ user_id: userId, species, planted_on: today, state: "healthy", growth_pct: 5, position_x: pos.x, position_z: pos.z, island_index: islandIndex })
@@ -188,11 +190,30 @@ export const getDashboard = createServerFn({ method: "GET" })
       supabase.from("revival_missions").select("*").eq("user_id", userId).eq("completed", false),
     ]);
 
+    // Re-derive positions per-island using phyllotaxis so legacy/overlapping
+    // stored positions don't stack trees on top of each other.
+    const allTrees = (trees ?? []) as any[];
+    const byIsland = new Map<number, any[]>();
+    for (const t of allTrees) {
+      const k = t.island_index ?? 0;
+      if (!byIsland.has(k)) byIsland.set(k, []);
+      byIsland.get(k)!.push(t);
+    }
+    const repositioned: any[] = [];
+    for (const [, group] of byIsland) {
+      group.sort((a, b) => (a.planted_on < b.planted_on ? -1 : a.planted_on > b.planted_on ? 1 : 0));
+      group.forEach((t, i) => {
+        const p = phyllotaxisPos(i);
+        repositioned.push({ ...t, position_x: p.x, position_z: p.z });
+      });
+    }
+    repositioned.sort((a, b) => (a.planted_on < b.planted_on ? 1 : -1));
+
     return {
       profile,
       apps: apps ?? [],
       usageToday: usage ?? [],
-      trees: trees ?? [],
+      trees: repositioned,
       todayTree,
       unlockedSpecies: (unlocked ?? []).map((u: any) => u.species),
       achievements: achievements ?? [],
